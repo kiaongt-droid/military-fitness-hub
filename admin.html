@@ -97,9 +97,6 @@
       });
     }
 
-    function logout() {
-      signOut(auth);
-    }
     async function adminMealPlan(uid) {
   const ref = doc(db, "users", uid);
   const snap = await getDoc(ref);
@@ -265,7 +262,9 @@ Focus training on the weak areas for the next 4 weeks.
   await setDoc(ref, { weaknessReport: report }, { merge: true });
   alert("Weakness report generated and saved for user.");
 }
-
+ function logout() {
+      signOut(auth);
+    }
   </script>
 
 </body>
