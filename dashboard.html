@@ -86,8 +86,13 @@
     <p id="trainingPlan"></p>
   </div>
 
-  <button onclick="logout()">Logout</button>
+  <div class="section">
+  <h2>Weakness Analyzer</h2>
+  <button onclick="analyzeWeaknesses()">Analyze Weaknesses</button>
+  <p id="weaknessReport"></p>
+</div>
 
+  <button onclick="logout()">Logout</button>
   <script type="module">
     import { auth, db } from "./firebase.js";
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -201,9 +206,135 @@
 }
 
 
-    function generateTrainingPlan() {
-      document.getElementById("trainingPlan").textContent = "AI training plan coming next...";
-    }
+    async function generateTrainingPlan() {
+  const ref = doc(db, "users", uid);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) {
+    alert("Please save your PFT and CFT first.");
+    return;
+  }
+
+  const data = snap.data();
+
+  const run3mile = Number(data.run3mile);
+  const plank = Number(data.plank);
+  const pullups = Number(data.pullups);
+  const muf = Number(data.muf);
+  const run880 = Number(data.run880);
+  const ammo = Number(data.ammo);
+
+  // Weakness detection
+  let weaknesses = [];
+
+  if (run3mile > 24) weaknesses.push("Endurance (3-mile run)");
+  if (plank < 60) weaknesses.push("Core strength (plank)");
+  if (pullups < 8) weaknesses.push("Upper body strength (pull-ups)");
+  if (muf > 180) weaknesses.push("Agility / anaerobic conditioning (MUF)");
+  if (run880 > 200) weaknesses.push("Mid-distance speed (880m)");
+  if (ammo < 60) weaknesses.push("Shoulder / arm endurance (ammo lifts)");
+
+  if (weaknesses.length === 0) weaknesses.push("Overall balanced — focus on progression");
+
+  const plan = `
+Weak Areas:
+${weaknesses.join(", ")}
+
+Weekly Training Plan:
+
+Monday – Strength
+- Pull-ups: 5 sets to failure
+- Push-ups: 4×25
+- Dumbbell rows: 4×12
+- Planks: 3×1 minute
+
+Tuesday – Endurance
+- 3-mile run at moderate pace
+- 10×100m sprints
+
+Wednesday – Core + Conditioning
+- Planks: 4×1 minute
+- Russian twists: 3×20
+- Burpees: 3×15
+
+Thursday – Speed Work
+- 880m repeats × 4
+- 200m sprints × 6
+
+Friday – Strength + Ammo Can
+- Ammo can lifts: 4×20
+- Shoulder press: 4×12
+- Deadlifts: 4×8
+
+Saturday – Long Run
+- 4–5 mile steady run
+
+Sunday – Rest / Mobility
+- Stretching 20 minutes
+- Light walk or easy jog
+`;
+
+  document.getElementById("trainingPlan").textContent = plan;
+
+  await setDoc(ref, { trainingPlan: plan }, { merge: true });
+}
+async function analyzeWeaknesses() {
+  const ref = doc(db, "users", uid);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) {
+    alert("Please save your PFT and CFT first.");
+    return;
+  }
+
+  const data = snap.data();
+
+  const run3mile = Number(data.run3mile);
+  const plank = Number(data.plank);
+  const pullups = Number(data.pullups);
+  const muf = Number(data.muf);
+  const run880 = Number(data.run880);
+  const ammo = Number(data.ammo);
+
+  let weaknesses = [];
+  let strengths = [];
+
+  // PFT analysis
+  if (run3mile <= 22) strengths.push("3-mile run endurance");
+  else weaknesses.push("3-mile run endurance");
+
+  if (plank >= 70) strengths.push("Core strength (plank)");
+  else weaknesses.push("Core strength (plank)");
+
+  if (pullups >= 12) strengths.push("Upper body strength (pull-ups)");
+  else weaknesses.push("Upper body strength (pull-ups)");
+
+  // CFT analysis
+  if (muf <= 160) strengths.push("Agility / anaerobic conditioning (MUF)");
+  else weaknesses.push("Agility / anaerobic conditioning (MUF)");
+
+  if (run880 <= 180) strengths.push("Mid-distance speed (880m)");
+  else weaknesses.push("Mid-distance speed (880m)");
+
+  if (ammo >= 70) strengths.push("Shoulder / arm endurance (ammo lifts)");
+  else weaknesses.push("Shoulder / arm endurance (ammo lifts)");
+
+  const report = `
+Strengths:
+- ${strengths.join("\n- ")}
+
+Weaknesses:
+- ${weaknesses.join("\n- ")}
+
+Recommendation:
+Focus your next 4 weeks of training on the weak areas listed above.
+`;
+
+  document.getElementById("weaknessReport").textContent = report;
+
+  await setDoc(ref, { weaknessReport: report }, { merge: true });
+}
+
 
     function logout() {
       signOut(auth);
