@@ -88,8 +88,10 @@
           <p>880m run: ${data.run880 || "N/A"}</p>
           <p>Ammo lifts: ${data.ammo || "N/A"}</p>
 
-          <button onclick="alert('AI plan generation coming next')">Generate AI Plan</button>
-        `;
+          <button onclick="adminMealPlan('${docSnap.id}')">Generate Meal Plan</button>
+<button onclick="adminTrainingPlan('${docSnap.id}')">Generate Training Plan</button>
+<button onclick="adminWeaknessReport('${docSnap.id}')">Analyze Weaknesses</button>
+
 
         usersDiv.appendChild(card);
       });
@@ -98,6 +100,172 @@
     function logout() {
       signOut(auth);
     }
+    async function adminMealPlan(uid) {
+  const ref = doc(db, "users", uid);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) {
+    alert("User has no profile data.");
+    return;
+  }
+
+  const data = snap.data();
+
+  const age = Number(data.age);
+  const height = Number(data.height);
+  const weight = Number(data.weight);
+
+  const calories = Math.round(10 * weight + 6.25 * height - 5 * age + 5);
+  const protein = Math.round(weight * 0.8);
+  const fats = Math.round((calories * 0.25) / 9);
+  const carbs = Math.round((calories - (protein * 4 + fats * 9)) / 4);
+
+  const mealPlan = `
+Daily Calories: ${calories}
+Protein: ${protein}g
+Carbs: ${carbs}g
+Fats: ${fats}g
+
+Breakfast:
+- Eggs + oatmeal + fruit
+
+Lunch:
+- Chicken breast, rice, vegetables
+
+Dinner:
+- Lean beef or fish, potatoes, greens
+
+Snacks:
+- Greek yogurt, nuts, protein shake
+`;
+
+  await setDoc(ref, { mealPlan }, { merge: true });
+  alert("Meal plan generated and saved for user.");
+}
+async function adminTrainingPlan(uid) {
+  const ref = doc(db, "users", uid);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) {
+    alert("User has no PFT/CFT data.");
+    return;
+  }
+
+  const data = snap.data();
+
+  const run3mile = Number(data.run3mile);
+  const plank = Number(data.plank);
+  const pullups = Number(data.pullups);
+  const muf = Number(data.muf);
+  const run880 = Number(data.run880);
+  const ammo = Number(data.ammo);
+
+  let weaknesses = [];
+
+  if (run3mile > 24) weaknesses.push("Endurance (3-mile run)");
+  if (plank < 60) weaknesses.push("Core strength (plank)");
+  if (pullups < 8) weaknesses.push("Upper body strength (pull-ups)");
+  if (muf > 180) weaknesses.push("Agility / anaerobic conditioning (MUF)");
+  if (run880 > 200) weaknesses.push("Mid-distance speed (880m)");
+  if (ammo < 60) weaknesses.push("Shoulder / arm endurance (ammo lifts)");
+
+  if (weaknesses.length === 0) weaknesses.push("Balanced — continue progression");
+
+  const plan = `
+Weak Areas:
+${weaknesses.join(", ")}
+
+Weekly Training Plan:
+
+Monday – Strength
+- Pull-ups: 5 sets to failure
+- Push-ups: 4×25
+- Dumbbell rows: 4×12
+- Planks: 3×1 minute
+
+Tuesday – Endurance
+- 3-mile run at moderate pace
+- 10×100m sprints
+
+Wednesday – Core + Conditioning
+- Planks: 4×1 minute
+- Russian twists: 3×20
+- Burpees: 3×15
+
+Thursday – Speed Work
+- 880m repeats × 4
+- 200m sprints × 6
+
+Friday – Strength + Ammo Can
+- Ammo can lifts: 4×20
+- Shoulder press: 4×12
+- Deadlifts: 4×8
+
+Saturday – Long Run
+- 4–5 mile steady run
+
+Sunday – Rest / Mobility
+- Stretching 20 minutes
+- Light walk or easy jog
+`;
+
+  await setDoc(ref, { trainingPlan: plan }, { merge: true });
+  alert("Training plan generated and saved for user.");
+}
+async function adminWeaknessReport(uid) {
+  const ref = doc(db, "users", uid);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) {
+    alert("User has no PFT/CFT data.");
+    return;
+  }
+
+  const data = snap.data();
+
+  const run3mile = Number(data.run3mile);
+  const plank = Number(data.plank);
+  const pullups = Number(data.pullups);
+  const muf = Number(data.muf);
+  const run880 = Number(data.run880);
+  const ammo = Number(data.ammo);
+
+  let strengths = [];
+  let weaknesses = [];
+
+  if (run3mile <= 22) strengths.push("3-mile run endurance");
+  else weaknesses.push("3-mile run endurance");
+
+  if (plank >= 70) strengths.push("Core strength");
+  else weaknesses.push("Core strength");
+
+  if (pullups >= 12) strengths.push("Upper body strength");
+  else weaknesses.push("Upper body strength");
+
+  if (muf <= 160) strengths.push("Agility / anaerobic conditioning");
+  else weaknesses.push("Agility / anaerobic conditioning");
+
+  if (run880 <= 180) strengths.push("Mid-distance speed");
+  else weaknesses.push("Mid-distance speed");
+
+  if (ammo >= 70) strengths.push("Shoulder / arm endurance");
+  else weaknesses.push("Shoulder / arm endurance");
+
+  const report = `
+Strengths:
+- ${strengths.join("\n- ")}
+
+Weaknesses:
+- ${weaknesses.join("\n- ")}
+
+Recommendation:
+Focus training on the weak areas for the next 4 weeks.
+`;
+
+  await setDoc(ref, { weaknessReport: report }, { merge: true });
+  alert("Weakness report generated and saved for user.");
+}
+
   </script>
 
 </body>
