@@ -154,9 +154,52 @@
       alert("CFT saved");
     }
 
-    function generateMealPlan() {
-      document.getElementById("mealPlan").textContent = "AI meal plan coming next...";
-    }
+    async function generateMealPlan() {
+  const ref = doc(db, "users", uid);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) {
+    alert("Please save your profile first.");
+    return;
+  }
+
+  const data = snap.data();
+
+  const age = Number(data.age);
+  const height = Number(data.height);
+  const weight = Number(data.weight);
+
+  // Basic calorie estimate (Mifflin-St Jeor)
+  const calories = Math.round(10 * weight + 6.25 * height - 5 * age + 5);
+
+  const protein = Math.round(weight * 0.8);
+  const fats = Math.round((calories * 0.25) / 9);
+  const carbs = Math.round((calories - (protein * 4 + fats * 9)) / 4);
+
+  const mealPlanText = `
+    Daily Calories: ${calories}
+    Protein: ${protein}g
+    Carbs: ${carbs}g
+    Fats: ${fats}g
+
+    Breakfast:
+    - Eggs + oatmeal + fruit
+
+    Lunch:
+    - Chicken breast, rice, vegetables
+
+    Dinner:
+    - Lean beef or fish, potatoes, greens
+
+    Snacks:
+    - Greek yogurt, nuts, protein shake
+  `;
+
+  document.getElementById("mealPlan").textContent = mealPlanText;
+
+  await setDoc(ref, { mealPlan: mealPlanText }, { merge: true });
+}
+
 
     function generateTrainingPlan() {
       document.getElementById("trainingPlan").textContent = "AI training plan coming next...";
@@ -165,7 +208,6 @@
     function logout() {
       signOut(auth);
     }
-  </script>
-
+</script>
 </body>
 </html>
