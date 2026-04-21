@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard | Military Fitness Hub</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0d1117;
+      color: white;
+      margin: 0;
+      padding: 20px;
+    }
+    .section {
+      background: #161b22;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 10px;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 5px;
+      border: none;
+    }
+    button {
+      padding: 10px 15px;
+      background: #238636;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background: #2ea043;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>Welcome to Your Dashboard</h1>
+  <p id="username"></p>
+
+  <!-- PROFILE SECTION -->
+  <div class="section">
+    <h2>Profile</h2>
+    <input id="age" placeholder="Age" type="number" />
+    <input id="height" placeholder="Height (inches)" type="number" />
+    <input id="weight" placeholder="Weight (lbs)" type="number" />
+    <input id="waist" placeholder="Waist (inches)" type="number" />
+    <button onclick="saveProfile()">Save Profile</button>
+  </div>
+
+  <!-- PFT SECTION -->
+  <div class="section">
+    <h2>Physical Fitness Test (PFT)</h2>
+    <input id="run3mile" placeholder="3-mile run time (minutes)" type="number" />
+    <input id="plank" placeholder="Plank time (seconds)" type="number" />
+    <input id="pullups" placeholder="Pull-ups" type="number" />
+    <button onclick="savePFT()">Save PFT</button>
+  </div>
+
+  <!-- CFT SECTION -->
+  <div class="section">
+    <h2>Combat Fitness Test (CFT)</h2>
+    <input id="muf" placeholder="Maneuver Under Fire time (seconds)" type="number" />
+    <input id="run880" placeholder="880m run time (seconds)" type="number" />
+    <input id="ammo" placeholder="Ammo can lifts" type="number" />
+    <button onclick="saveCFT()">Save CFT</button>
+  </div>
+
+  <!-- AI SECTIONS (PLACEHOLDERS) -->
+  <div class="section">
+    <h2>AI Meal Plan</h2>
+    <button onclick="generateMealPlan()">Generate Meal Plan</button>
+    <p id="mealPlan"></p>
+  </div>
+
+  <div class="section">
+    <h2>AI Training Plan</h2>
+    <button onclick="generateTrainingPlan()">Generate Training Plan</button>
+    <p id="trainingPlan"></p>
+  </div>
+
+  <button onclick="logout()">Logout</button>
+
+  <script type="module">
+    import { auth, db } from "./firebase.js";
+    import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    let uid = null;
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "login.html";
+      } else {
+        uid = user.uid;
+        document.getElementById("username").textContent = "Logged in as: " + user.email;
+        loadUserData();
+      }
+    });
+
+    async function loadUserData() {
+      const ref = doc(db, "users", uid);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const data = snap.data();
+
+        document.getElementById("age").value = data.age || "";
+        document.getElementById("height").value = data.height || "";
+        document.getElementById("weight").value = data.weight || "";
+        document.getElementById("waist").value = data.waist || "";
+
+        document.getElementById("run3mile").value = data.run3mile || "";
+        document.getElementById("plank").value = data.plank || "";
+        document.getElementById("pullups").value = data.pullups || "";
+
+        document.getElementById("muf").value = data.muf || "";
+        document.getElementById("run880").value = data.run880 || "";
+        document.getElementById("ammo").value = data.ammo || "";
+      }
+    }
+
+    async function saveProfile() {
+      await setDoc(doc(db, "users", uid), {
+        age: age.value,
+        height: height.value,
+        weight: weight.value,
+        waist: waist.value
+      }, { merge: true });
+      alert("Profile saved");
+    }
+
+    async function savePFT() {
+      await setDoc(doc(db, "users", uid), {
+        run3mile: run3mile.value,
+        plank: plank.value,
+        pullups: pullups.value
+      }, { merge: true });
+      alert("PFT saved");
+    }
+
+    async function saveCFT() {
+      await setDoc(doc(db, "users", uid), {
+        muf: muf.value,
+        run880: run880.value,
+        ammo: ammo.value
+      }, { merge: true });
+      alert("CFT saved");
+    }
+
+    function generateMealPlan() {
+      document.getElementById("mealPlan").textContent = "AI meal plan coming next...";
+    }
+
+    function generateTrainingPlan() {
+      document.getElementById("trainingPlan").textContent = "AI training plan coming next...";
+    }
+
+    function logout() {
+      signOut(auth);
+    }
+  </script>
+
+</body>
+</html>
